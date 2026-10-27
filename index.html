@@ -4,26 +4,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0b1020">
 <title>AI MUSIC STUDIO PRO</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#0b1020;color:#eef2ff;
-font-family:Arial,sans-serif;padding:18px}
+body{margin:0;background:#0b1020;color:#eef2ff;font-family:Arial,sans-serif;padding:18px}
 main{max-width:760px;margin:auto}
 h1{color:#a5b4fc}
-.card{background:#151e33;padding:18px;border-radius:14px;
-margin:14px 0;border:1px solid #2a3855}
+.card{background:#151e33;padding:18px;border-radius:14px;margin:14px 0;border:1px solid #2a3855}
 label{display:block;margin:14px 0 7px}
-input,select,textarea,button{width:100%;padding:12px;
-border-radius:8px;border:1px solid #344563;
-background:#0c1528;color:white;font-size:16px}
-textarea{min-height:100px;resize:vertical}
-button{background:#6256e8;border:0;margin-top:12px;
-font-weight:bold;cursor:pointer}
+input,select,textarea,button{width:100%;padding:12px;border-radius:8px;border:1px solid #344563;background:#0c1528;color:white;font-size:16px}
+textarea{min-height:180px;resize:vertical;line-height:1.7}
+button{background:#6256e8;border:0;margin-top:12px;font-weight:bold;cursor:pointer}
 button.secondary{background:#273650}
+button:disabled{opacity:.6;cursor:wait}
 .small{color:#a8b6d0;font-size:13px;line-height:1.6}
-pre{white-space:pre-wrap;overflow-wrap:anywhere;
-font-family:inherit;line-height:1.8}
+.status{margin-top:12px;line-height:1.6;overflow-wrap:anywhere}
 </style>
 </head>
 <body>
@@ -41,7 +37,7 @@ font-family:inherit;line-height:1.8}
 </select>
 
 <label>歌曲主题 / Chủ đề</label>
-<input id="theme" placeholder="例如：人生、自然、爱情、梦想">
+<input id="theme" maxlength="200" placeholder="例如：人生、自然、爱情、梦想">
 
 <label>音乐风格 / Phong cách</label>
 <select id="style">
@@ -70,26 +66,26 @@ font-family:inherit;line-height:1.8}
 <option>15秒短视频</option>
 <option>30秒短歌</option>
 <option>1分钟歌曲</option>
-<option>3分钟完整歌曲</option>
+<option selected>3分钟完整歌曲</option>
 </select>
 
-<button onclick="createSong()">生成歌曲方案</button>
+<button id="generateBtn" onclick="createSong()">✨ AI 生成歌曲方案</button>
 <button class="secondary" onclick="saveSong()">保存作品</button>
 <button class="secondary" onclick="showSaved()">查看已保存作品</button>
+<div id="status" class="status small" role="status"></div>
 </div>
 
 <div class="card">
-<h3>歌词创作 / Lời bài hát</h3>
-<textarea id="lyrics" placeholder="生成的歌词会显示在这里"></textarea>
+<h3>AI 歌词创作 / Lời bài hát</h3>
+<textarea id="lyrics" placeholder="AI 生成的歌词会显示在这里"></textarea>
 <button onclick="copyText('lyrics')">复制歌词</button>
 </div>
 
 <div class="card">
 <h3>AI 音乐生成提示词</h3>
-<textarea id="prompt" placeholder="音乐风格、节奏、人声和编曲方案"></textarea>
+<textarea id="prompt" placeholder="AI 音乐风格、节奏、人声和编曲方案"></textarea>
 <button onclick="copyText('prompt')">复制音乐提示词</button>
-<p class="small">提示词可复制到支持 AI 音乐生成的服务。
-此功能本身不会生成音频。</p>
+<p class="small">将提示词复制到支持 AI 音乐生成的平台，即可尝试制作音频。本网页目前生成歌词和提示词，不直接输出 MP3。</p>
 </div>
 
 <div class="card">
@@ -101,90 +97,180 @@ font-family:inherit;line-height:1.8}
 <script>
 const $ = id => document.getElementById(id);
 
-function createSong(){
- const theme = $('theme').value.trim();
- if(!theme){alert('请先输入歌曲主题');return;}
+async function createSong(){
+  const theme = $('theme').value.trim();
+  if(!theme){
+    alert('请先输入歌曲主题');
+    return;
+  }
 
- const lang = $('lang').value;
- const style = $('style').value;
- const voice = $('voice').value;
- const duration = $('duration').value;
+  const btn = $('generateBtn');
+  const status = $('status');
 
- const lyrics = {
- zh:`《${theme}》\n\n【主歌一】\n在漫长的岁月里寻找答案，\n让每一次呼吸都不再平凡。\n穿过风雨，走过黑暗，\n心中的光依然璀璨。\n\n【副歌】\n${theme}，是心中的方向，\n纵然世界变幻，依然勇敢。\n让时间见证我们的梦想，\n把每个明天唱成希望。\n\n【主歌二】\n山河有自己的节奏，\n生命也有自己的远方。\n学会珍惜，学会放下，\n让心自由，让爱生长。\n\n【桥段】\n当黎明越过天际，\n所有答案慢慢清晰。\n\n【最终副歌】\n让心中的歌声飞向远方，\n让生命绽放自己的光芒。`,
- vi:`《${theme}》\n\n[Verse 1]\nGiữa tháng năm dài, ta tìm câu trả lời,\nGiữ trong tim mình những ước mơ sáng ngời.\nQua bao giông tố, qua đêm tối,\nNiềm tin vẫn luôn rạng ngời.\n\n[Chorus]\n${theme}, là hướng đi trong tim,\nDẫu thế gian đổi thay, ta vẫn vững tin.\nĐể ngày mai viết tiếp ước mơ,\nĐể tình yêu còn mãi trong thơ.\n\n[Verse 2]\nĐất trời có nhịp điệu riêng,\nMỗi cuộc đời một chân trời bình yên.\nBiết trân trọng, biết buông bỏ,\nCho tâm hồn bay đến miền mơ.\n\n[Bridge]\nKhi bình minh lên cuối trời,\nBao câu trả lời dần sáng tươi.\n\n[Final Chorus]\nHãy để tiếng hát bay xa,\nCho cuộc đời nở những khúc ca.`,
- mix:`《${theme}》\n\n【主歌 / Verse】\n在岁月中寻找方向，\nGiữ niềm tin trong ánh sáng.\n走过风雨，不怕路长，\nDẫu gian nan, tim vẫn vững vàng.\n\n【副歌 / Chorus】\n${theme}，让梦想飞翔，\nCho ngày mai thêm hy vọng.\n心中的光永不熄灭，\nTình yêu còn mãi trong tim.\n\n【桥段 / Bridge】\n天地有自己的节奏，\nCuộc đời có những con đường.\n学会珍惜每一个当下，\nĐể yêu thương mãi còn vương.\n\n【最终副歌 / Final Chorus】\n让歌声飞向远方，\nCho ước mơ bay cao muôn phương.`,
- en:`"${theme}"\n\n[Verse 1]\nThrough the years, we search for meaning,\nEvery heartbeat keeps us dreaming.\nThrough the storm and through the night,\nWe carry on toward the light.\n\n[Chorus]\n${theme}, our guiding light,\nWe keep on dreaming through the night.\nEvery tomorrow, a brand-new start,\nA song of hope inside the heart.\n\n[Verse 2]\nTime moves on, the world keeps turning,\nEvery soul has dreams still burning.\nLearn to cherish, learn to grow,\nLet the heart find where to go.\n\n[Bridge]\nWhen the morning meets the sky,\nWe spread our wings and learn to fly.\n\n[Final Chorus]\nLet our voices reach the sky,\nLet our dreams forever fly.`
- };
+  btn.disabled = true;
+  btn.textContent = 'AI 正在创作，请稍候…';
+  status.textContent = '正在连接 AI 歌词服务，请不要关闭页面。';
 
- $('lyrics').value = lyrics[lang];
+  const lang = $('lang').value;
+  const style = $('style').value;
+  const voice = $('voice').value;
+  const duration = $('duration').value;
 
- const language = {
- zh:'Chinese lyrics and vocals',
- vi:'Vietnamese lyrics and vocals',
- mix:'Chinese and Vietnamese bilingual vocals',
- en:'English lyrics and vocals'
- }[lang];
+  try {
+    const response = await fetch('/api/generate', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        theme,
+        lang: lang === 'mix' ? 'zhvi' : lang,
+        style,
+        voice,
+        duration
+      })
+    });
 
- $('prompt').value =
- `Create an original ${duration} song about "${theme}". `+
- `Style: ${style}. Vocal: ${voice}. Language: ${language}. `+
- `Professional studio production, memorable chorus, emotional dynamics, `+
- `clear vocals, balanced mix, polished mastering. `+
- `Build the arrangement from an expressive opening to a strong chorus. `+
- `Use original melodies and avoid imitating any specific artist.`;
+    const data = await response.json();
 
+    if(!response.ok){
+      throw new Error(data.error || 'AI 请求失败，请稍后重试。');
+    }
+
+    if(!data.lyrics){
+      throw new Error('AI 没有返回歌词，请重新尝试。');
+    }
+
+    let lyricsText = data.lyrics.trim();
+    let promptText = data.prompt || '';
+
+    const marker = '【AI音乐生成提示词】';
+    const markerIndex = lyricsText.indexOf(marker);
+
+    if(markerIndex !== -1){
+      const extractedPrompt = lyricsText
+        .slice(markerIndex + marker.length)
+        .trim();
+
+      lyricsText = lyricsText.slice(0, markerIndex).trim();
+
+      if(extractedPrompt){
+        promptText = extractedPrompt;
+      }
+    }
+
+    $('lyrics').value = lyricsText;
+    $('prompt').value = promptText;
+
+    status.textContent = 'AI 歌词生成成功！可以复制、保存或继续编辑。';
+
+  } catch(error) {
+    console.error('AI generation error:', error);
+    status.textContent = '生成失败：' + error.message +
+      '。请检查 Vercel 部署、GEMINI_API_KEY 环境变量及 API 配额。';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✨ AI 生成歌曲方案';
+  }
 }
 
 async function copyText(id){
- try{
- await navigator.clipboard.writeText($(id).value);
- alert('复制成功');
- }catch(e){
- $(id).select();
- alert('请长按选中文字并复制');
- }
+  const field = $(id);
+
+  if(!field.value.trim()){
+    alert('没有可复制的内容');
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(field.value);
+    alert('复制成功');
+  } catch(e) {
+    field.focus();
+    field.select();
+    alert('请长按选中文字并复制');
+  }
 }
 
 function saveSong(){
- const title = $('theme').value.trim();
- if(!title){alert('请先输入主题');return;}
- const list = JSON.parse(localStorage.getItem('aiSongs')||'[]');
- list.unshift({
- title,
- date:new Date().toLocaleString(),
- lyrics:$('lyrics').value,
- prompt:$('prompt').value
- });
- localStorage.setItem('aiSongs',JSON.stringify(list));
- alert('作品已保存在当前浏览器');
- showSaved();
+  const title = $('theme').value.trim();
+
+  if(!title){
+    alert('请先输入歌曲主题');
+    return;
+  }
+
+  if(!$('lyrics').value.trim() && !$('prompt').value.trim()){
+    alert('请先生成歌曲方案');
+    return;
+  }
+
+  try {
+    const list = JSON.parse(localStorage.getItem('aiSongs') || '[]');
+
+    list.unshift({
+      title,
+      date: new Date().toLocaleString(),
+      lang: $('lang').value,
+      style: $('style').value,
+      voice: $('voice').value,
+      duration: $('duration').value,
+      lyrics: $('lyrics').value,
+      prompt: $('prompt').value
+    });
+
+    localStorage.setItem('aiSongs', JSON.stringify(list.slice(0,100)));
+    alert('作品已保存在当前浏览器');
+    showSaved();
+  } catch(e) {
+    alert('保存失败，可能是浏览器存储空间不足。');
+  }
 }
 
 function showSaved(){
- const list = JSON.parse(localStorage.getItem('aiSongs')||'[]');
- $('saved').innerHTML='';
- if(!list.length){
- $('saved').textContent='暂时没有保存的作品';
- return;
- }
- list.forEach((song,index)=>{
- const box=document.createElement('div');
- box.className='card';
- const title=document.createElement('strong');
- title.textContent=song.title+' — '+song.date;
- const btn=document.createElement('button');
- btn.className='secondary';
- btn.textContent='载入作品';
- btn.onclick=()=>{
- $('theme').value=song.title;
- $('lyrics').value=song.lyrics;
- $('prompt').value=song.prompt;
- };
- box.append(title,btn);
- $('saved').append(box);
- });
+  const box = $('saved');
+  box.replaceChildren();
+
+  let list;
+
+  try {
+    list = JSON.parse(localStorage.getItem('aiSongs') || '[]');
+  } catch(e) {
+    list = [];
+  }
+
+  if(!list.length){
+    box.textContent = '暂时没有保存的作品';
+    return;
+  }
+
+  list.forEach(song => {
+    const item = document.createElement('div');
+    item.className = 'card';
+
+    const title = document.createElement('strong');
+    title.textContent = (song.title || '未命名') + ' — ' + (song.date || '');
+
+    const loadBtn = document.createElement('button');
+    loadBtn.className = 'secondary';
+    loadBtn.textContent = '载入作品';
+
+    loadBtn.onclick = () => {
+      $('theme').value = song.title || '';
+      $('lang').value = song.lang || 'zh';
+      $('style').value = song.style || '高级流行';
+      $('voice').value = song.voice || '男声';
+      $('duration').value = song.duration || '3分钟完整歌曲';
+      $('lyrics').value = song.lyrics || '';
+      $('prompt').value = song.prompt || '';
+      $('status').textContent = '已载入作品，可以继续编辑。';
+      window.scrollTo({top:0,behavior:'smooth'});
+    };
+
+    item.append(title, loadBtn);
+    box.append(item);
+  });
 }
+
+showSaved();
 </script>
 </body>
 </html>
