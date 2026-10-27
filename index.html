@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -85,7 +84,7 @@ button:disabled{opacity:.6;cursor:wait}
 <h3>AI 音乐生成提示词</h3>
 <textarea id="prompt" placeholder="AI 音乐风格、节奏、人声和编曲方案"></textarea>
 <button onclick="copyText('prompt')">复制音乐提示词</button>
-<p class="small">将提示词复制到支持 AI 音乐生成的平台，即可尝试制作音频。本网页目前生成歌词和提示词，不直接输出 MP3。</p>
+<p class="small">将提示词复制到支持 AI 音乐生成的平台（如 Suno / Udio），即可尝试制作音频。</p>
 </div>
 
 <div class="card">
@@ -139,33 +138,15 @@ async function createSong(){
       throw new Error('AI 没有返回歌词，请重新尝试。');
     }
 
-    let lyricsText = data.lyrics.trim();
-    let promptText = data.prompt || '';
-
-    const marker = '【AI音乐生成提示词】';
-    const markerIndex = lyricsText.indexOf(marker);
-
-    if(markerIndex !== -1){
-      const extractedPrompt = lyricsText
-        .slice(markerIndex + marker.length)
-        .trim();
-
-      lyricsText = lyricsText.slice(0, markerIndex).trim();
-
-      if(extractedPrompt){
-        promptText = extractedPrompt;
-      }
-    }
-
-    $('lyrics').value = lyricsText;
-    $('prompt').value = promptText;
+    // 直接使用后端独立解析好的字段
+    $('lyrics').value = data.lyrics.trim();
+    $('prompt').value = (data.prompt || '').trim();
 
     status.textContent = 'AI 歌词生成成功！可以复制、保存或继续编辑。';
 
   } catch(error) {
     console.error('AI generation error:', error);
-    status.textContent = '生成失败：' + error.message +
-      '。请检查 Vercel 部署、GEMINI_API_KEY 环境变量及 API 配额。';
+    status.textContent = '生成失败：' + error.message + '。请检查后端部署及环境变量。';
   } finally {
     btn.disabled = false;
     btn.textContent = '✨ AI 生成歌曲方案';
