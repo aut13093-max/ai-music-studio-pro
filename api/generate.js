@@ -1,141 +1,58 @@
+import { GoogleGenAI, Type, Schema } from "@google/genai";
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    res.setHeader("Allow", "POST");
-    return res.status(405).json({ error: "只支持 POST 请求" });
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
+  const { theme, lang, style, voice, duration } = req.body;
 
-  if (!apiKey) {
-    return res.status(500).json({
-      error: "Vercel 未配置 GEMINI_API_KEY"
-    });
+  if (!theme) {
+    return res.status(400).json({ error: '缺少歌曲主题' });
   }
 
   try {
-    const {
-      theme = "爱情",
-      lang = "zh",
-      style = "高级流行",
-      voice = "女声",
-      duration = "3分钟完整歌曲"
-    } = req.body || {};
-
-    const clean = (v, max = 200) =>
-      String(v).trim().slice(0, max);
-
-    const languageNames = {
-      zh: "简体中文",
-      vi: "越南语",
-      zhvi: "中文和越南语双语",
-      mix: "中文和越南语双语",
-      en: "英语"
-    };
-
-    const language = languageNames[lang] || "简体中文";
-    const safeTheme = clean(theme);
-
-    if (!safeTheme) {
-      return res.status(400).json({
-        error: "请先输入歌曲主题"
-      });
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error('未配置 GEMINI_API_KEY 环境变量');
     }
 
-    const instructions = `
-你是一名专业的原创歌曲创作人。
+    const ai = new GoogleGenAI({ apiKey });
 
-歌曲主题：${safeTheme}
-歌词语言：${language}
-音乐风格：${clean(style, 80)}
-演唱方式：${clean(voice, 50)}
-歌曲长度：${clean(duration, 50)}
+    const promptText = `
+你是一位专业的顶尖词曲创作人和音乐制作人。请根据以下需求创作一首高质量的歌曲：
+- 创作语言: ${lang}
+- 歌曲主题: ${theme}
+- 音乐风格: ${style}
+- 演唱方式: ${voice}
+- 歌曲长度: ${duration}
 
-请创作原创歌曲，按以下格式输出：
+请严格按 JSON 格式返回，包含两个字段：
+1. "lyrics": 完整的歌曲歌词（包含 [Verse], [Chorus], [Bridge] 等结构标记）。
+2. "prompt": 适配 Suno/Udio 等 AI 音乐生成平台的英文或双语音乐提示词（描述流派、乐器、节拍BPM、情绪和人声）。
+    `.trim();
 
-【歌曲名称】
-【歌曲简介】
-【主歌 1】
-【副歌】
-【主歌 2】
-【桥段】
-【最后副歌】
-【AI音乐生成提示词】
-
-音乐提示词请使用英文，描述风格、乐器、
-节奏、情绪、人声和编曲。
-
-要求：
-1. 使用指定语言创作。
-2. 中越双语必须同时包含中文和越南语。
-3. 纯音乐模式不写演唱歌词。
-4. 根据歌曲长度调整篇幅。
-5. 不复制现有歌曲歌词。
-`;
-
-    const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/interactions",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": apiKey,
-          "Api-Revision": "2026-05-20"
-        },
-        body: JSON.stringify({
-          model: "gemini-3.8-flash",
-          input: instructions
-        })
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: promptText,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            lyrics: { type: Type.STRING, description: "完整的歌曲歌词" },
+            prompt: { type: Type.STRING, description: "AI音乐生成提示词" }
+          },
+          required: ["lyrics", "prompt"]
+        }
       }
-    );
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error("Gemini API error:", data);
-
-      return res.status(response.status).json({
-        error: data?.error?.message ||
-          "Gemini API 请求失败，请检查模型和 API 配置"
-      });
-    }
-
-    const lyrics = (data.steps || [])
-      .filter(step => step.type === "model_output")
-      .flatMap(step => step.content || [])
-      .filter(item => item.type === "text")
-      .map(item => item.text || "")
-      .join("\n")
-      .trim();
-
-    if (!lyrics) {
-      console.error("Unexpected Gemini response:", data);
-
-      return res.status(502).json({
-        error: "AI 没有返回文本，请检查 API 响应"
-      });
-    }
-
-    const musicPrompt =
-      `Create an original ${clean(duration, 50)} song about ` +
-      `"${safeTheme}". Style: ${clean(style, 80)}. ` +
-      `Vocal: ${clean(voice, 50)}. Language: ${language}. ` +
-      "Professional production, memorable melody, emotional dynamics, " +
-      "balanced mix and original musical ideas.";
-
-    return res.status(200).json({
-      success: true,
-      lyrics,
-      prompt: musicPrompt,
-      provider: "Gemini",
-      model: "gemini-3.8-flash"
     });
+
+    const resultJson = JSON.parse(response.text);
+    return res.status(200).json(resultJson);
 
   } catch (error) {
-    console.error("Generation error:", error);
-
-    return res.status(500).json({
-      error: "服务器请求失败，请检查 Vercel 部署日志"
-    });
+    console.error('Gemini API Error:', error);
+    return res.status(500).json({ error: error.message || '生成服务出错' });
   }
 }
