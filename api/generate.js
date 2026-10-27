@@ -42,8 +42,8 @@ module.exports = async function handler(req, res) {
 2. "prompt": 适配 Suno/Udio 等 AI 音乐生成平台的英文或双语音乐提示词（描述流派、乐器、节拍BPM、情绪和人声）。
     `.trim();
 
-    // 已將模型更新為 gemini-2.0-flash
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+    // 使用官方指定的 gemini-3.8-flash 模型
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
